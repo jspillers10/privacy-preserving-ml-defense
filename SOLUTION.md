@@ -1,6 +1,6 @@
 # Technical Solution Breakdown
 
-## Challenge Analysis
+## Threat Model Analysis
 
 ### Threat Model: Membership Inference Attack (MIA)
 
@@ -41,14 +41,14 @@ Standard SGD is vulnerable because individual samples can have large influence o
 for batch in data_loader:
     # 1. Compute per-sample gradients
     per_sample_grads = compute_gradients(batch)
-    
+
     # 2. CLIP each gradient (bound sensitivity)
     clipped_grads = [clip(g, max_norm=C) for g in per_sample_grads]
-    
+
     # 3. Add GAUSSIAN NOISE
     avg_grad = mean(clipped_grads)
     noisy_grad = avg_grad + N(0, σ² * C²)
-    
+
     # 4. Update weights
     weights -= learning_rate * noisy_grad
 ```
@@ -234,7 +234,7 @@ Our choice of ε=3.0 is appropriate for:
 
 ## Conclusion
 
-This solution demonstrates that **privacy and utility are not mutually exclusive**. With careful hyperparameter tuning and proper implementation of DP-SGD, we achieved:
+This solution demonstrates that **privacy and utility are not mutually exclusive**. With careful hyperparameter tuning and proper implementation of DP-SGD, this approach achieves:
 
 - **93% reduction** in membership inference vulnerability
 - **81.2% accuracy** (only 0.8% below baseline)
