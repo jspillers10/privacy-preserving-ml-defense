@@ -11,4 +11,4 @@ opacus>=1.4.0
 safetensors>=0.3.0
 
 # Note: For CPU-only installation (smaller download):
-# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu 
