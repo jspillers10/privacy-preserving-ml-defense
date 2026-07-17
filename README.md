@@ -1,24 +1,25 @@
-# HTB Machine Learning Security: Privacy Defense Challenge
+# Privacy-Preserving Image Classification: Defending Against Membership Inference
 
-## Challenge Overview
+Implements DP-SGD (Differentially Private Stochastic Gradient Descent) to defend an image classifier against membership inference attacks (MIA), with minimal loss in accuracy.
 
-**Objective**: Train a privacy-preserving Fashion-MNIST classifier that resists membership inference attacks (MIA) while maintaining utility.
+## Project Overview
 
-**Requirements**:
+**Goal**: Train a Fashion-MNIST classifier that resists membership inference attacks while staying practically useful.
+
+**Design targets I set for this build**:
 - Test accuracy ≥ 70%
 - MIA vulnerability reduction ≥ 40%
-- Use exact FashionMNISTCNN architecture
 
-## Solution Approach
+## Approach
 
 ### Defense Strategy: Differential Privacy with DP-SGD
 
 Implemented **Differentially Private Stochastic Gradient Descent** using the Opacus library to provide formal privacy guarantees.
 
-**Key Mechanisms**:
-1. **Per-sample gradient clipping** - Bounds individual sample influence
-2. **Gaussian noise injection** - Masks individual contributions
-3. **Privacy accounting** - Tracks cumulative privacy budget
+**Key mechanisms**:
+1. **Per-sample gradient clipping** – bounds individual sample influence
+2. **Gaussian noise injection** – masks individual contributions
+3. **Privacy accounting** – tracks cumulative privacy budget
 
 ### Configuration
 
@@ -34,22 +35,18 @@ LEARNING_RATE = 0.001
 
 ## Results
 
-| Metric | Requirement | Achieved | Status |
-|--------|-------------|----------|--------|
-| Test Accuracy | ≥70% | **81.2%** | +11.2% |
-| MIA Improvement | ≥40% | **93.02%** | +132% |
-| MIA Advantage | Reduce | **0.0062** | (from 0.0895) |
-| Overall Score | - | **87.11/100** | DONE |
-
-**Flag**: `HTB{pr*****_d*******_m*****_c*******}`
+| Metric | Target | Achieved |
+|--------|--------|----------|
+| Test Accuracy | ≥70% | **81.2%** |
+| MIA Vulnerability Reduction | ≥40% | **93.02%** |
 
 ### Privacy Analysis
 
-- **Baseline MIA Accuracy**: 54.5% (attacker has 9% advantage)
-- **Defended MIA Accuracy**: 50.62% (attacker has 0.62% advantage)
-- **Interpretation**: Attack success reduced to near-random guessing
+- **Baseline MIA accuracy**: 54.5% (attacker has a 9% advantage over guessing)
+- **Defended MIA accuracy**: 50.62% (attacker has a 0.62% advantage — close to random)
+- **Interpretation**: attack success is reduced to near-random guessing
 
-The model achieves **(ε=3.0, δ=1e-5)-differential privacy**, providing formal mathematical guarantees that individual training samples cannot be reliably identified.
+The model achieves **(ε=3.0, δ=1e-5)-differential privacy**, providing a formal mathematical guarantee that individual training samples cannot be reliably identified from the trained model.
 
 ## Technical Implementation
 
@@ -73,7 +70,6 @@ FC(128→10) → Output
 
 ### Data Preprocessing
 
-Critical: Match server's normalization exactly
 ```python
 transforms.Normalize((0.2860,), (0.3530,))
 ```
@@ -94,71 +90,51 @@ pip3 install opacus safetensors --break-system-packages
 python3 train.py
 ```
 
-Training time: ~15-20 minutes on CPU, ~5-10 minutes on GPU
-
-### Submission
-
-```bash
-export BASE_URL="http://target_ip:port"
-curl -X POST "$BASE_URL/submit" -F "defended_model=@defended_model.safetensors"
-```
+Training time: ~15–20 minutes on CPU, ~5–10 minutes on GPU. The script trains the model, evaluates test accuracy each epoch, tracks the privacy budget via Opacus's accountant, and saves the final weights to `defended_model.safetensors`.
 
 ## Key Learnings
 
-### Why DP-SGD Works
+### Why DP-SGD works
 
-1. **Gradient Clipping**: Prevents any single sample from having outsized influence on model updates
-2. **Noise Addition**: Provides plausible deniability - can't determine if specific sample was in training set
-3. **Privacy Accounting**: Mathematically proven bounds on information leakage
+1. **Gradient clipping** – prevents any single sample from having outsized influence on model updates
+2. **Noise addition** – provides plausible deniability; you can't determine if a specific sample was in the training set
+3. **Privacy accounting** – gives mathematically proven bounds on information leakage
 
-### Privacy-Utility Tradeoff
+### Privacy-utility tradeoff
 
-- **Accuracy cost**: Minimal (81.2% vs ~82% baseline)
-- **Privacy gain**: Massive (93% vulnerability reduction)
-- **Ratio**: ~6200:1 privacy gained per utility lost
+- **Accuracy cost**: minimal (81.2% vs. ~82% for a non-private baseline)
+- **Privacy gain**: large (93% reduction in MIA vulnerability)
 
-### Membership Inference Attacks
+### Membership inference attacks, briefly
 
-**How MIA Works**:
-1. Attacker observes prediction confidence
-2. Training samples often have higher confidence
-3. Attack model learns to distinguish these patterns
+1. An attacker queries the model with known training and known non-training samples
+2. Training samples often produce higher-confidence predictions than unseen samples
+3. An attack classifier learns to exploit that confidence gap to guess training-set membership
 
-**Defense Effectiveness**:
-- Confidence distributions now overlap
-- Attack accuracy drops to ~50% (random guessing)
-- Formal privacy guarantee: (ε=3.0, δ=1e-5)
+**Why the defense works**: after DP-SGD training, the confidence distributions for training vs. non-training samples overlap heavily, so the attack classifier's accuracy collapses toward 50% (random guessing).
 
 ## Real-World Applications
 
-This privacy-preserving approach is critical for:
+This class of defense matters anywhere a model is trained on data that shouldn't be re-identifiable from the model itself:
 
-- **Healthcare**: Medical imaging without patient data exposure
-- **Finance**: Fraud detection preserving transaction privacy
-- **Enterprise**: User analytics with GDPR/CCPA compliance
-- **Government**: Sensitive data analysis with privacy guarantees
+- **Healthcare** – medical imaging models without patient data exposure
+- **Finance** – fraud detection models that don't leak transaction-level membership
+- **Enterprise** – user-analytics models under GDPR/CCPA constraints
+- **Government** – sensitive-data analysis with formal privacy guarantees
 
-## Files Included
+## Files
 
-- `model.py` - CNN architecture definition
-- `train.py` - DP-SGD training script
-- `README.md` - This writeup
+- `model.py` – CNN architecture definition
+- `train.py` – DP-SGD training script
 
 ## References
 
-- [Deep Learning with Differential Privacy](https://arxiv.org/abs/1607.00133) - Abadi et al., 2016
-- [Membership Inference Attacks](https://arxiv.org/abs/1610.05820) - Shokri et al., 2017
-- [Opacus Library](https://opacus.ai/) - PyTorch Differential Privacy
+- [Deep Learning with Differential Privacy](https://arxiv.org/abs/1607.00133) — Abadi et al., 2016
+- [Membership Inference Attacks Against Machine Learning Models](https://arxiv.org/abs/1610.05820) — Shokri et al., 2017
+- [Opacus](https://opacus.ai/) — PyTorch differential privacy library
 
 ## Author
 
-**Jake Spillers**  
-Cyber Security Specialist @ Live Nation Entertainment  
-Focus: AI/ML Security, Application Security, Third-Party Risk
-
----
-
-**Challenge**: HackTheBox Machine Learning Security Module  
-**Difficulty**: Medium  
-**Category**: Privacy-Preserving Machine Learning  
-**Completion Date**: January 2026
+**Jake Spillers**
+Cybersecurity Specialist, Third-Party Risk — Live Nation Entertainment
+Focus: AI/ML security
