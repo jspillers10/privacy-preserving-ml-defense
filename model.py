@@ -1,8 +1,7 @@
 """
 Fashion-MNIST CNN Architecture
 
-Required architecture for HTB Privacy Defense Challenge.
-Must match server validation exactly.
+CNN used for the DP-SGD privacy-preserving training pipeline in this repo.
 """
 
 import torch
